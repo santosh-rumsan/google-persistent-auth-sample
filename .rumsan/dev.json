@@ -1,0 +1,11 @@
+{
+  "servers": [
+    {
+      "id": "7fb2mfce",
+      "command": "pnpm dev",
+      "port": 3045,
+      "subdomain": "dev-try",
+      "name": null
+    }
+  ]
+}
