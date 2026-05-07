@@ -2,7 +2,7 @@
   "servers": [
     {
       "id": "7fb2mfce",
-      "command": "pnpm dev",
+      "command": "pnpm dev-remote",
       "port": 3045,
       "subdomain": "dev-try",
       "name": null

@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3045",
+    "dev-remote": "vite build --mode development && vite preview --port 3045",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",

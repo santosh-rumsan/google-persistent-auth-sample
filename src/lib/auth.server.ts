@@ -1,7 +1,9 @@
 import { betterAuth } from "better-auth"
-import { db } from "./db"
+import { bearer } from "better-auth/plugins"
+import { db } from "./db.server"
 
 export const auth = betterAuth({
+  plugins: [bearer()],
   database: db,
   socialProviders: {
     google: {

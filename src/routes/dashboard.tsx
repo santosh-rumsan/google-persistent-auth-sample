@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router"
-import { getSession, fetchCalendarEvents, type CalendarEvent } from "../server/calendar"
+import { useState, useEffect } from "react"
+import { getSession, type CalendarEvent } from "../server/calendar"
 import { authClient } from "../lib/auth-client"
 import { Button } from "@/components/ui/button"
 
@@ -7,8 +8,7 @@ export const Route = createFileRoute("/dashboard")({
   loader: async () => {
     const session = await getSession()
     if (!session) throw redirect({ to: "/login" })
-    const events = await fetchCalendarEvents()
-    return { session, events }
+    return { session }
   },
   component: Dashboard,
 })
@@ -71,8 +71,38 @@ function EventCard({ event: calEvent }: { event: CalendarEvent }) {
 }
 
 function Dashboard() {
-  const { session, events } = Route.useLoaderData()
+  const { session } = Route.useLoaderData()
   const router = useRouter()
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadEvents() {
+      try {
+        const { data: sessionData } = await authClient.getSession()
+        if (!sessionData) {
+          router.navigate({ to: "/login" })
+          return
+        }
+        const token = sessionData.session.token
+        const res = await fetch("/api/calendar/events", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.message ?? `Request failed: ${res.status}`)
+        }
+        const data = await res.json() as { events: CalendarEvent[] }
+        setEvents(data.events)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load events")
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadEvents()
+  }, [router])
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -121,13 +151,23 @@ function Dashboard() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-lg font-medium">
             Upcoming Events
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({events.length})
-            </span>
+            {!loading && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                ({events.length})
+              </span>
+            )}
           </h1>
         </div>
 
-        {events.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center gap-2 py-16 text-center">
+            <p className="text-muted-foreground">Loading events…</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center gap-2 py-16 text-center">
+            <p className="text-destructive">{error}</p>
+          </div>
+        ) : events.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <p className="text-muted-foreground">No upcoming events on your calendar.</p>
           </div>
